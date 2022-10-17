@@ -1,0 +1,110 @@
+services:
+  ## bind ################################################
+  bind:
+    restart: always
+    image: sameersbn/bind:9.16.1-20200524
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ./bind:/data
+    environment:
+      - WEBMIN_ENABLED=false
+    networks:
+      p11:
+        ipv4_address: 172.18.236.10
+
+  ### balancer-1 ################################################
+  balancer-1:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - "${PWD}/config/balancer/balancer-1:/etc/nginx/conf.d"
+    networks:
+      p11:
+        ipv4_address: 172.18.236.110
+
+  ### balancer-2 ################################################
+  balancer-2:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8082:80"
+    volumes:
+      - "${PWD}/config/balancer/balancer-2:/etc/nginx/conf.d"
+    networks:
+      p11:
+        ipv4_address: 172.18.236.120
+
+  ### node-1 ################################################
+  node-1:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8001:8000"
+    volumes:
+      - "${PWD}/config/node/node-1.conf:/etc/nginx/conf.d/node-1.conf"
+      - ./src/node-1/:/var/www
+    networks:
+      p11:
+        ipv4_address: 172.18.236.21
+
+  ### node-2 ################################################
+  node-2:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8002:8000"
+    volumes:
+      - "${PWD}/config/node/node-2.conf:/etc/nginx/conf.d/node-2.conf"
+      - ./src/node-2/:/var/www
+    networks:
+      p11:
+        ipv4_address: 172.18.236.22
+
+  ### node-3 ################################################
+  node-3:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8003:8000"
+    volumes:
+      - "${PWD}/config/node/node-2.conf:/etc/nginx/conf.d/node-2.conf"
+      - ./src/node-3/:/var/www
+    networks:
+      p11:
+        ipv4_address: 172.18.236.23
+
+  ### app-us ################################################
+  app-us:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8000"
+    networks:
+      p11:
+        ipv4_address: 172.18.236.70
+    dns:
+      - 172.18.236.10
+
+  ### app-all ################################################
+  app-all:
+    build:
+      context: ./context/nginx
+    ports:
+      - "8000"
+    networks:
+      p11:
+        ipv4_address: 172.18.236.80
+    dns:
+      - 172.18.236.10
+
+networks:
+  p11:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.236.0/24
+          gateway: 172.18.236.1
